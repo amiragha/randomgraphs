@@ -26,6 +26,14 @@ function distvec(v1, v2){
     return new Vector2D(v2.x-v1.x, v2.y-v1.y);
 }
 
+function real2canvas(x, y, shift, scale){
+    return [scale.x *(x+shift.x), scale.y *(y+shift.y)];
+}
+
+function canvas2real(x, y, shift, scale){
+    return [x/scale.x-shift.x, y/scale.y-shift.y];
+}
+
 class Vertex {
     constructor(x, y, r, c, meta){
         this.x = x;
@@ -36,14 +44,22 @@ class Vertex {
     }
     show(shift=new Vector2D(0.0, 0.0), scale=new Vector2D(1.0, 1.0)) {
         fill(this.c);
-        ellipse(scale.x*(this.x+shift.x), scale.y*(this.y+shift.y), 2*this.r);
+        let [x, y] = real2canvas(this.x, this.y, shift, scale);
+        ellipse(x, y, 2*this.r);
     }
     move(dx, dy){
         this.x = this.x + dx;
         this.y = this.y + dy;
     }
-    contains(x, y){
-        return (norm2({x:this.x - x, y:this.y-y}) < this.r);
+    contains(x, y, shift, scale){
+        print(x, y);
+        print(this.x, this.y);
+        print(real2canvas(this.x, this.y, shift, scale));
+        print(real2canvas(x, y, shift, scale));
+        //return (norm2({x:this.x - x, y:this.y-y}) < this.r);
+        let [xnorm, ynorm] = real2canvas(this.x - x, this.y - y, {x:0,y:0}, scale);
+        print(sqrt(xnorm*xnorm + ynorm*ynorm));
+        return (sqrt(xnorm*xnorm + ynorm*ynorm) < this.r);
     }
 }
 
@@ -55,8 +71,9 @@ class Edge {
 }
 
 function showedge(v1, v2, shift=new Vector2D(0.0, 0.0), scale=new Vector2D(1.0, 1.0)) {
-    line(scale.x * (v1.x+shift.x), scale.y * (v1.y+shift.y),
-         scale.x * (v2.x+shift.x), scale.y * (v2.y+shift.y));
+    let [x1, y1] = real2canvas(v1.x, v1.y, shift, scale);
+    let [x2, y2] = real2canvas(v2.x, v2.y, shift, scale);
+    line(x1, y1, x2, y2);
 }
 
 
@@ -137,7 +154,7 @@ class Graph {
 }
 
 let r, g, b;
-let N = 50;
+let N = 70;
 let p = 0.02;
 let canvasX = 720;
 let canvasY = 400;
@@ -219,8 +236,8 @@ function initializeGraph(n_vertices) {
 function addEdge(i, j){
     graph.vertices[i].meta.neighbor += 1;
     graph.vertices[j].meta.neighbor += 1;
-    graph.vertices[i].r += 2;
-    graph.vertices[j].r += 2;
+    graph.vertices[i].r += 1;
+    graph.vertices[j].r += 1;
     graph.edges.push(new Edge(i, j));
 }
 
@@ -230,17 +247,18 @@ function startClicked(clicked_id)
 }
 
 function mousePressed() {
-    mouseX2 = mouseX / graph.scale.x - graph.shift.x;
-    mouseY2 = mouseY / graph.scale.y - graph.shift.y;
+    let [rlmouseX, rlmouseY] = canvas2real(mouseX, mouseY, graph.shift, graph.scale);
     for (let i = 0; i < graph.vertices.length; i++){
         v = graph.vertices[i];
-        if (v.contains(mouseX2, mouseY2)){
+        if (v.contains(rlmouseX, rlmouseY, graph.shift, graph.scale)){
             if (islocked) {
-                offset = new Vector2D(mouseX2 - v.x, mouseY2 - v.y);
+                offset.x = rlmouseX - v.x;
+                offset.y = rlmouseY - v.y;
                 lockedidx = i;
             }
             else {
-                offset = new Vector2D(mouseX2 - v.x, mouseY2 - v.y);
+                offset.x = rlmouseX - v.x;
+                offset.y = rlmouseY - v.y;
                 islocked  = true;
                 lockedidx = i;
             }
@@ -255,8 +273,9 @@ function mousePressed() {
 function mouseDragged() {
     if (islocked) {
         v = graph.vertices[lockedidx];
-        v.x = mouseX / graph.scale.x - graph.shift.x - offset.x;
-        v.y = mouseY / graph.scale.y - graph.shift.y - offset.y;
+        let [rlmouseX, rlmouseY] = canvas2real(mouseX, mouseY, graph.shift, graph.scale);
+        v.x = rlmouseX - offset.x;
+        v.y = rlmouseY - offset.y;
     }
 }
 
