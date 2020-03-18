@@ -52,13 +52,8 @@ class Vertex {
         this.y = this.y + dy;
     }
     contains(x, y, shift, scale){
-        print(x, y);
-        print(this.x, this.y);
-        print(real2canvas(this.x, this.y, shift, scale));
-        print(real2canvas(x, y, shift, scale));
         //return (norm2({x:this.x - x, y:this.y-y}) < this.r);
         let [xnorm, ynorm] = real2canvas(this.x - x, this.y - y, {x:0,y:0}, scale);
-        print(sqrt(xnorm*xnorm + ynorm*ynorm));
         return (sqrt(xnorm*xnorm + ynorm*ynorm) < this.r);
     }
 }
