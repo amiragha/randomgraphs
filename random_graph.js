@@ -143,7 +143,9 @@ class Graph {
     evolve(rate=1.0){
         let grad = this.gradient(0.5, 5000, 0.001);
         for (let i = 0; i < this.vertices.length; i++){
-            this.vertices[i].move(-rate*grad[i].x, -rate*grad[i].y);
+            if (i != lockedidx) {
+                this.vertices[i].move(-rate*grad[i].x, -rate*grad[i].y);
+            }
         }
     }
 }
